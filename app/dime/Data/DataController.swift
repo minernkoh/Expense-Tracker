@@ -69,6 +69,15 @@ class DataController: ObservableObject {
             }
 
             self.container.viewContext.automaticallyMergesChangesFromParent = true
+
+            // Resolve CloudKit sync conflicts deterministically by letting the in-memory state win
+            // on a per-property basis. Without an explicit policy Core Data uses NSErrorMergePolicy,
+            // which makes merges of remote changes fail unpredictably and can leave the local store
+            // in an inconsistent state after an interrupted sync.
+            self.container.viewContext.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
+
+            // Tag local changes so they can be distinguished from changes imported by CloudKit.
+            self.container.viewContext.transactionAuthor = "app"
         }
 
 //        #if DEBUG
@@ -133,6 +142,40 @@ class DataController: ObservableObject {
             try? container.viewContext.save()
             WidgetCenter.shared.reloadAllTimelines()
         }
+    }
+
+    /// Deletes a category together with everything that belongs to it (transactions, template
+    /// transactions and its budget).
+    ///
+    /// The associated objects are removed explicitly here rather than relying on a Core Data
+    /// `Cascade` delete rule. With `NSPersistentCloudKitContainer`, CloudKit syncs records with
+    /// eventual consistency: while an import is still in flight (most commonly after the app is
+    /// force-quit mid-sync) a category can momentarily appear deleted before its related records
+    /// have been reconciled. A `Cascade` rule reacts to that by wiping every transaction in the
+    /// category locally and then exporting those deletions back to CloudKit, permanently losing the
+    /// user's data across all devices. The relationships therefore use `Nullify`, and intentional
+    /// category deletions perform the removal explicitly through this method so the user-facing
+    /// behaviour ("deleting a category deletes its transactions") is preserved.
+    func deleteCategory(_ category: Category) {
+        let context = container.viewContext
+
+        for transaction in category.allTransactions {
+            context.delete(transaction)
+        }
+
+        if let templates = category.templates as? Set<TemplateTransaction> {
+            for template in templates {
+                context.delete(template)
+            }
+        }
+
+        if let budget = category.budget {
+            context.delete(budget)
+        }
+
+        context.delete(category)
+
+        save()
     }
 
     func updateRecurringTransaction(transaction: Transaction) {
