@@ -604,10 +604,8 @@ struct CategoryListView: View {
                     Button {
                         withAnimation {
                             if let gonnaDelete = toDelete {
-                                moc.delete(gonnaDelete)
+                                dataController.deleteCategory(gonnaDelete)
                             }
-
-                            dataController.save()
                         }
 
                         toDelete = nil
@@ -1561,8 +1559,7 @@ struct DeleteCategoryAlert: View {
 
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                         withAnimation {
-                            moc.delete(toDelete)
-                            dataController.save()
+                            dataController.deleteCategory(toDelete)
                         }
                     }
 
