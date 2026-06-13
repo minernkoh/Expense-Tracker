@@ -7,6 +7,7 @@
 
 import CoreData
 import Foundation
+import os
 import SwiftUI
 import WidgetKit
 
@@ -29,6 +30,8 @@ enum CustomError: Swift.Error, CustomLocalizedStringResourceConvertible {
 
 class DataController: ObservableObject {
     static let shared = DataController()
+
+    private static let logger = Logger(subsystem: "com.rafaelsoh.dime", category: "DataController")
 
     var container = NSPersistentCloudKitContainer(name: "MainModel")
 
@@ -109,11 +112,11 @@ class DataController: ObservableObject {
 
     var addedTransaction: Bool {
         get {
-            UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.bool(forKey: "newTransactionAdded")
+            (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).bool(forKey: "newTransactionAdded")
         }
 
         set {
-            UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.set(newValue, forKey: "newTransactionAdded")
+            (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).set(newValue, forKey: "newTransactionAdded")
         }
     }
 
@@ -138,9 +141,16 @@ class DataController: ObservableObject {
     }
 
     func save() {
-        if container.viewContext.hasChanges {
-            try? container.viewContext.save()
+        guard container.viewContext.hasChanges else { return }
+
+        do {
+            try container.viewContext.save()
             WidgetCenter.shared.reloadAllTimelines()
+        } catch {
+            // Don't reload widgets on failure: the persisted store is unchanged, so refreshing
+            // them would surface stale-but-presented-as-current data. Surface the error to the
+            // unified log instead of swallowing it silently.
+            DataController.logger.error("Failed to save Core Data context: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -383,7 +393,7 @@ class DataController: ObservableObject {
 
         var calendar = Calendar(identifier: .gregorian)
 
-        calendar.firstWeekday = UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.integer(forKey: "firstWeekday")
+        calendar.firstWeekday = (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).integer(forKey: "firstWeekday")
         calendar.minimumDaysInFirstWeek = 4
 
         switch type {
@@ -706,7 +716,7 @@ class DataController: ObservableObject {
 
         var calendar = Calendar(identifier: .gregorian)
 
-        calendar.firstWeekday = UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.integer(forKey: "firstWeekday")
+        calendar.firstWeekday = (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).integer(forKey: "firstWeekday")
         calendar.minimumDaysInFirstWeek = 4
 
         let dateCapPredicate = NSPredicate(format: "%K <= %@", #keyPath(Transaction.date), Date.now as CVarArg)
@@ -754,7 +764,7 @@ class DataController: ObservableObject {
                 let thisWeek = calendar.date(from: dateComponents)!
                 startPredicate = NSPredicate(format: "%K >= %@", #keyPath(Transaction.date), thisWeek as CVarArg)
             } else if type == 3 {
-                let startOfMonth = UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.integer(forKey: "firstDayOfMonth")
+                let startOfMonth = (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).integer(forKey: "firstDayOfMonth")
 
                 let thisMonth = getStartOfMonth(startDay: startOfMonth)
                 startPredicate = NSPredicate(format: "%K >= %@", #keyPath(Transaction.date), thisMonth as CVarArg)
@@ -1258,7 +1268,7 @@ class DataController: ObservableObject {
             // calendar initialization
             var calendar = Calendar(identifier: .gregorian)
 
-            calendar.firstWeekday = UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.integer(forKey: "firstWeekday")
+            calendar.firstWeekday = (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).integer(forKey: "firstWeekday")
             calendar.minimumDaysInFirstWeek = 4
 
             var dictionary = [Date: Double]()
@@ -1432,7 +1442,7 @@ class DataController: ObservableObject {
 
         var calendar = Calendar(identifier: .gregorian)
 
-        calendar.firstWeekday = UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.integer(forKey: "firstWeekday")
+        calendar.firstWeekday = (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).integer(forKey: "firstWeekday")
         calendar.minimumDaysInFirstWeek = 4
 
         let startPredicate = NSPredicate(format: "%K >= %@", #keyPath(Transaction.date), date as CVarArg)
@@ -1563,7 +1573,7 @@ class DataController: ObservableObject {
 
         var calendar = Calendar(identifier: .gregorian)
 
-        calendar.firstWeekday = UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.integer(forKey: "firstWeekday")
+        calendar.firstWeekday = (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).integer(forKey: "firstWeekday")
         calendar.minimumDaysInFirstWeek = 4
 
         let endPredicate = NSPredicate(format: "%K < %@", #keyPath(Transaction.date), Date.now as CVarArg)
@@ -1584,7 +1594,7 @@ class DataController: ObservableObject {
 
             startPredicate = NSPredicate(format: "%K >= %@", #keyPath(Transaction.date), startDate as CVarArg)
         case .month:
-            let startOfMonth = UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.integer(forKey: "firstDayOfMonth")
+            let startOfMonth = (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).integer(forKey: "firstDayOfMonth")
 
             startDate = getStartOfMonth(startDay: startOfMonth)
 
@@ -1612,7 +1622,7 @@ class DataController: ObservableObject {
 
         var calendar = Calendar(identifier: .gregorian)
 
-        calendar.firstWeekday = UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.integer(forKey: "firstWeekday")
+        calendar.firstWeekday = (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).integer(forKey: "firstWeekday")
         calendar.minimumDaysInFirstWeek = 4
 
         switch type {

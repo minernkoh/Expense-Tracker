@@ -1,0 +1,64 @@
+# SwiftLint configuration for Dime.
+# Run locally with `swiftlint` from the repo root. CI runs it on every push/PR.
+#
+# Severities are deliberately tuned so the existing large, legacy view files
+# surface as *warnings* rather than hard errors. This keeps CI green today while
+# steering new code toward smaller, safer units. Tighten these thresholds as the
+# big views get broken up.
+
+included:
+  - app
+
+excluded:
+  - app/dime/Preview Content
+  - app/dime/Views/TestView.swift
+  - app/dime/Utilities/TestDragToAdd.swift
+
+opt_in_rules:
+  - force_unwrapping
+  - empty_count
+  - empty_string
+  - first_where
+  - last_where
+  - contains_over_filter_count
+  - sorted_first_last
+  - toggle_bool
+
+disabled_rules:
+  - todo
+  - identifier_name # codebase uses many short names (id, x, y, df) by design
+  - type_name
+
+# Force operations are flagged but kept at warning severity so they annotate
+# without blocking; the goal is to stop *new* ones creeping in.
+force_cast:
+  severity: warning
+force_try:
+  severity: warning
+force_unwrapping:
+  severity: warning
+
+line_length:
+  warning: 200
+  error: 500
+  ignores_comments: true
+  ignores_urls: true
+
+file_length:
+  warning: 800
+  error: 4000
+
+type_body_length:
+  warning: 400
+  error: 2500
+
+function_body_length:
+  warning: 80
+  error: 600
+
+cyclomatic_complexity:
+  warning: 15
+  error: 40
+
+nesting:
+  type_level: 3
