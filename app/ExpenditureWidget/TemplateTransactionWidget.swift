@@ -93,7 +93,7 @@
 //    let entry: TemplateTransactionWidgetProvider.Entry
 //
 //    @AppStorage("showCents", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var showCents: Bool = true
-//    @AppStorage("currency", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var currency: String = Locale.current.currencyCode!
+//    @AppStorage("currency", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var currency: String = (Locale.current.currencyCode ?? "USD")
 //    var currencySymbol: String {
 //        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency)!
 //    }
