@@ -87,19 +87,19 @@ struct LockBudgetWidgetProvider: IntentTimelineProvider {
             let calendar = Calendar.current
 
             if budget.type == 1 {
-                let components = calendar.dateComponents([.hour], from: budget.startDate!, to: Date.now)
+                let components = calendar.dateComponents([.hour], from: (budget.startDate ?? Date.now), to: Date.now)
 
-                timeLeft = String(localized: "\(24 - components.hour!) hours left")
+                timeLeft = String(localized: "\(24 - (components.hour ?? 0)) hours left")
             } else if budget.type == 2 {
-                let components = calendar.dateComponents([.day], from: budget.startDate!, to: Date.now)
+                let components = calendar.dateComponents([.day], from: (budget.startDate ?? Date.now), to: Date.now)
 
-                timeLeft = String(localized: "\(7 - components.day!) days left")
+                timeLeft = String(localized: "\(7 - (components.day ?? 0)) days left")
             } else {
-                let components1 = calendar.dateComponents([.day], from: budget.startDate!, to: budget.endDate)
-                let numberOfDays = components1.day!
+                let components1 = calendar.dateComponents([.day], from: (budget.startDate ?? Date.now), to: budget.endDate)
+                let numberOfDays = (components1.day ?? 0)
 
-                let components2 = calendar.dateComponents([.day], from: budget.startDate!, to: Date.now)
-                let numberOfDaysPast = components2.day!
+                let components2 = calendar.dateComponents([.day], from: (budget.startDate ?? Date.now), to: Date.now)
+                let numberOfDaysPast = (components2.day ?? 0)
 
                 let daysLeftNumber = Int(numberOfDays - numberOfDaysPast)
                 timeLeft = String(localized: "\(daysLeftNumber) days left")
@@ -162,7 +162,7 @@ struct LockBudgetWidgetEntryView: View {
 
     @AppStorage("currency", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var currency: String = (Locale.current.currencyCode ?? "USD")
     var currencySymbol: String {
-        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency)!
+        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency) ?? currency
     }
 
     @AppStorage("showCents", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var showCents: Bool = true
