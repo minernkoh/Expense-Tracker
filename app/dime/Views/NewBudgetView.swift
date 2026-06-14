@@ -76,7 +76,7 @@ struct BrandNewBudgetView: View {
     }
 
     var oneYearAgo: Date {
-        return Calendar.current.date(byAdding: .year, value: -1, to: Date.now)!
+        return Calendar.current.date(byAdding: .year, value: -1, to: Date.now) ?? Date.now
     }
 
     // stage 5
@@ -94,7 +94,7 @@ struct BrandNewBudgetView: View {
 
     @AppStorage("currency", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var currency: String = (Locale.current.currencyCode ?? "USD")
     var currencySymbol: String {
-        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency)!
+        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency) ?? currency
     }
 
     var amountPerDayString: String {
@@ -601,13 +601,13 @@ struct BrandNewBudgetView: View {
                         budgetTimeFrame = .day
                     case 2:
                         budgetTimeFrame = .week
-                        chosenDayWeek = Calendar.current.dateComponents([.weekday], from: unwrappedEditedBudget.startDate!).weekday!
+                        chosenDayWeek = Calendar.current.dateComponents([.weekday], from: unwrappedEditedBudget.startDate ?? Date.now).weekday ?? 0
                     case 3:
                         budgetTimeFrame = .month
-                        chosenDayMonth = Calendar.current.dateComponents([.day], from: unwrappedEditedBudget.startDate!).day!
+                        chosenDayMonth = Calendar.current.dateComponents([.day], from: unwrappedEditedBudget.startDate ?? Date.now).day ?? 0
                     case 4:
                         budgetTimeFrame = .year
-                        chosenDayYear = unwrappedEditedBudget.startDate!
+                        chosenDayYear = unwrappedEditedBudget.startDate ?? Date.now
                     default:
                         budgetTimeFrame = .week
                     }
@@ -644,13 +644,13 @@ struct BrandNewBudgetView: View {
                         budgetTimeFrame = .day
                     case 2:
                         budgetTimeFrame = .week
-                        chosenDayWeek = Calendar.current.dateComponents([.weekday], from: unwrappedEditedMainBudget.startDate!).weekday!
+                        chosenDayWeek = Calendar.current.dateComponents([.weekday], from: unwrappedEditedMainBudget.startDate ?? Date.now).weekday ?? 0
                     case 3:
                         budgetTimeFrame = .month
-                        chosenDayMonth = Calendar.current.dateComponents([.day], from: unwrappedEditedMainBudget.startDate!).day!
+                        chosenDayMonth = Calendar.current.dateComponents([.day], from: unwrappedEditedMainBudget.startDate ?? Date.now).day ?? 0
                     case 4:
                         budgetTimeFrame = .year
-                        chosenDayYear = unwrappedEditedMainBudget.startDate!
+                        chosenDayYear = unwrappedEditedMainBudget.startDate ?? Date.now
                     default:
                         budgetTimeFrame = .week
                     }
@@ -729,12 +729,12 @@ struct BrandNewBudgetView: View {
 
             let dateComponents = calendar.dateComponents([.weekOfYear, .yearForWeekOfYear], from: today)
 
-            let sunday = calendar.date(from: dateComponents)!
+            let sunday = calendar.date(from: dateComponents) ?? Date.now
 
-            let holdingDate = calendar.date(byAdding: .day, value: chosenDayWeek - 1, to: sunday)!
+            let holdingDate = calendar.date(byAdding: .day, value: chosenDayWeek - 1, to: sunday) ?? sunday
 
             if holdingDate > today {
-                let newHoldingDate = calendar.date(byAdding: .day, value: -7, to: holdingDate)!
+                let newHoldingDate = calendar.date(byAdding: .day, value: -7, to: holdingDate) ?? holdingDate
 
                 startDate = newHoldingDate
             } else {
@@ -745,12 +745,12 @@ struct BrandNewBudgetView: View {
 
             let dateComponents = calendar.dateComponents([.month, .year], from: today)
 
-            let startOfMonth = calendar.date(from: dateComponents)!
+            let startOfMonth = calendar.date(from: dateComponents) ?? Date.now
 
-            let holdingDate = calendar.date(byAdding: .day, value: chosenDayMonth - 1, to: startOfMonth)!
+            let holdingDate = calendar.date(byAdding: .day, value: chosenDayMonth - 1, to: startOfMonth) ?? startOfMonth
 
             if holdingDate > today {
-                let newHoldingDate = calendar.date(byAdding: .month, value: -1, to: holdingDate)!
+                let newHoldingDate = calendar.date(byAdding: .month, value: -1, to: holdingDate) ?? holdingDate
 
                 startDate = newHoldingDate
             } else {

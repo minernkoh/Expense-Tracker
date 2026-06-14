@@ -73,7 +73,7 @@ struct TemplateTransactionView: View {
 
     @AppStorage("currency", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var currency: String = (Locale.current.currencyCode ?? "USD")
     var currencySymbol: String {
-        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency)!
+        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency) ?? currency
     }
 
     @State var showingCategoryView = false
@@ -731,10 +731,6 @@ struct TemplateTransactionView: View {
 
             if let unwrappedCategory = transaction.category {
                 _category = State(initialValue: unwrappedCategory)
-                print(unwrappedCategory.wrappedName)
-                print("FOUND IT")
-            } else {
-                print("CANNOT FIND")
             }
 
             _income = State(initialValue: transaction.income)
@@ -742,7 +738,6 @@ struct TemplateTransactionView: View {
             _repeatType = State(initialValue: Int(transaction.recurringType))
             _repeatCoefficient = State(initialValue: Int(transaction.recurringCoefficient))
 
-            print("IM HERE")
         }
 
         self.order = order
@@ -953,7 +948,7 @@ struct SettingsQuickAddWidgetDraggingView: View {
     @AppStorage("currency", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var currency: String = (Locale.current.currencyCode ?? "USD")
 
     var currencySymbol: String {
-        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency)!
+        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency) ?? currency
     }
 
     @StateObject var gridData = GridViewModel()
@@ -1022,7 +1017,6 @@ struct SettingsQuickAddWidgetDraggingView: View {
                     .onDrop(of: [.text], delegate: DropViewDelegate(grid: grid, gridData: gridData))
                     .onTapGesture {
                         selectedItem = grid
-                        print(grid.index)
                         lastSelectedIndex = grid.index
                     }
                 }

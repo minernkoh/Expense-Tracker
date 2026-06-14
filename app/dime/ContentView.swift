@@ -92,7 +92,7 @@ struct ContentView: View {
                 if NSUbiquitousKeyValueStore.default.string(forKey: "currency") == nil {
                     NSUbiquitousKeyValueStore.default.set((Locale.current.currencyCode ?? "USD"), forKey: "currency")
                 } else {
-                    currency = NSUbiquitousKeyValueStore.default.string(forKey: "currency")!
+                    currency = NSUbiquitousKeyValueStore.default.string(forKey: "currency") ?? (Locale.current.currencyCode ?? "USD")
                 }
 
                 defaults.set(2, forKey: "numberEntryType")

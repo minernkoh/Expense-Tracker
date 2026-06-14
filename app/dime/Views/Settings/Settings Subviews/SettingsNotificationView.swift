@@ -197,9 +197,9 @@ struct SettingsNotificationsView: View {
             let components = Calendar.current.dateComponents([.hour, .minute], from: customTime)
 
             (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).set(
-              components.hour!, forKey: "customHour")
+              (components.hour ?? 0), forKey: "customHour")
             (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).set(
-              components.minute!, forKey: "customMinute")
+              (components.minute ?? 0), forKey: "customMinute")
           }
 
           newNotification()
@@ -208,9 +208,9 @@ struct SettingsNotificationsView: View {
           let components = Calendar.current.dateComponents([.hour, .minute], from: customTime)
 
           (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).set(
-            components.hour!, forKey: "customHour")
+            (components.hour ?? 0), forKey: "customHour")
           (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).set(
-            components.minute!, forKey: "customMinute")
+            (components.minute ?? 0), forKey: "customMinute")
 
           newNotification()
         }
@@ -230,7 +230,7 @@ struct SettingsNotificationsView: View {
               forKey: "customHour")
             components.minute = (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).integer(
               forKey: "customMinute")
-            customTime = Calendar.current.date(from: components)!
+            customTime = Calendar.current.date(from: components) ?? Date.now
           }
         }
       }

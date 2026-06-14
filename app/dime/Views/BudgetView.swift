@@ -287,7 +287,7 @@ struct MainBudgetView: View {
 
     @AppStorage("currency", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var currency: String = (Locale.current.currencyCode ?? "USD")
     var currencySymbol: String {
-        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency)!
+        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency) ?? currency
     }
 
     var percentageOfDays: Double {
@@ -561,7 +561,7 @@ struct SingleBudgetView: View {
             if budget.type == 1 {
                 let components = calendar.dateComponents([.hour], from: budget.wrappedDate, to: Date.now)
 
-                return String(localized: "\(24 - components.hour!)h left")
+                return String(localized: "\(24 - (components.hour ?? 0))h left")
             } else if budget.type == 2 {
                 let components = calendar.dateComponents([.day], from: budget.wrappedDate, to: Date.now)
 
@@ -601,7 +601,7 @@ struct SingleBudgetView: View {
 
     @AppStorage("currency", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var currency: String = (Locale.current.currencyCode ?? "USD")
     var currencySymbol: String {
-        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency)!
+        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency) ?? currency
     }
 
     var difference: Double {
@@ -976,7 +976,7 @@ struct BudgetDollarView: View {
 
     @AppStorage("currency", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var currency: String = (Locale.current.currencyCode ?? "USD")
     var currencySymbol: String {
-        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency)!
+        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency) ?? currency
     }
 
     var dynamicTypeSizes: (symbol: Font.TextStyle, amount: Font.TextStyle) {
@@ -1012,7 +1012,7 @@ struct DetailedBudgetDollarView: View {
 
     @AppStorage("currency", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var currency: String = (Locale.current.currencyCode ?? "USD")
     var currencySymbol: String {
-        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency)!
+        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency) ?? currency
     }
 
     var body: some View {
@@ -1040,7 +1040,7 @@ struct DetailedBudgetDifferenceDollarView: View {
 
     @AppStorage("currency", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var currency: String = (Locale.current.currencyCode ?? "USD")
     var currencySymbol: String {
-        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency)!
+        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency) ?? currency
     }
 
     var body: some View {
@@ -1392,13 +1392,13 @@ struct TimeBudgetView: View {
             dateFormatter.dateFormat = "d MMM"
             return dateFormatter.string(from: startDate) + " - " + dateFormatter.string(from: endDate)
         } else if budgetType == 3 {
-            var endDate = Calendar.current.date(byAdding: .month, value: 1, to: startDate)!
-            endDate = Calendar.current.date(byAdding: .day, value: -1, to: endDate)!
+            var endDate = Calendar.current.date(byAdding: .month, value: 1, to: startDate) ?? startDate
+            endDate = Calendar.current.date(byAdding: .day, value: -1, to: endDate) ?? endDate
             dateFormatter.dateFormat = "d MMM"
             return dateFormatter.string(from: startDate) + " - " + dateFormatter.string(from: endDate)
         } else if budgetType == 4 {
-            var endDate = Calendar.current.date(byAdding: .year, value: 1, to: startDate)!
-            endDate = Calendar.current.date(byAdding: .day, value: -1, to: endDate)!
+            var endDate = Calendar.current.date(byAdding: .year, value: 1, to: startDate) ?? startDate
+            endDate = Calendar.current.date(byAdding: .day, value: -1, to: endDate) ?? endDate
             dateFormatter.dateFormat = "d MMM yy"
             return dateFormatter.string(from: startDate) + " - " + dateFormatter.string(from: endDate)
         } else {
@@ -1429,7 +1429,7 @@ struct TimeBudgetView: View {
 
     @AppStorage("currency", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var currency: String = (Locale.current.currencyCode ?? "USD")
     var currencySymbol: String {
-        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency)!
+        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency) ?? currency
     }
 
     var difference: Double {
@@ -1461,11 +1461,11 @@ struct TimeBudgetView: View {
                     return String(localized: "left \(weekString)")
                 } else if budgetType == 3 {
                     let components = Calendar.current.dateComponents([.month], from: startDate, to: budget.wrappedDate)
-                    let monthString = String(localized: "\(components.month!) months ago")
+                    let monthString = String(localized: "\((components.month ?? 0)) months ago")
                     return String(localized: "left \(monthString)")
                 } else if budgetType == 4 {
                     let components = Calendar.current.dateComponents([.year], from: startDate, to: budget.wrappedDate)
-                    let yearString = String(localized: "\(components.year!) months ago")
+                    let yearString = String(localized: "\((components.year ?? 0)) months ago")
                     return String(localized: "left \(yearString)")
                 } else {
                     return ""
@@ -1495,11 +1495,11 @@ struct TimeBudgetView: View {
                     return String(localized: "over \(weekString)")
                 } else if budgetType == 3 {
                     let components = Calendar.current.dateComponents([.month], from: startDate, to: budget.wrappedDate)
-                    let monthString = String(localized: "\(components.month!) months ago")
+                    let monthString = String(localized: "\((components.month ?? 0)) months ago")
                     return String(localized: "over \(monthString)")
                 } else if budgetType == 4 {
                     let components = Calendar.current.dateComponents([.year], from: startDate, to: budget.wrappedDate)
-                    let yearString = String(localized: "\(components.year!) months ago")
+                    let yearString = String(localized: "\((components.year ?? 0)) months ago")
                     return String(localized: "over \(yearString)")
                 } else {
                     return ""
@@ -1520,16 +1520,16 @@ struct TimeBudgetView: View {
             return 7 - (components.day ?? 0)
         } else if budgetType == 3 {
             let components1 = calendar.dateComponents([.day], from: budget.wrappedDate, to: budget.endDate)
-            let numberOfDays = components1.day!
+            let numberOfDays = (components1.day ?? 0)
             let components2 = calendar.dateComponents([.day], from: budget.wrappedDate, to: Date.now)
-            let numberOfDaysPast = components2.day!
+            let numberOfDaysPast = (components2.day ?? 0)
 
             return Int(numberOfDays - numberOfDaysPast)
         } else if budgetType == 4 {
             let components1 = calendar.dateComponents([.day], from: budget.wrappedDate, to: budget.endDate)
-            let numberOfDays = components1.day!
+            let numberOfDays = (components1.day ?? 0)
             let components2 = calendar.dateComponents([.day], from: budget.wrappedDate, to: Date.now)
-            let numberOfDaysPast = components2.day!
+            let numberOfDaysPast = (components2.day ?? 0)
             return Int(numberOfDays - numberOfDaysPast)
         } else {
             return 0
@@ -1679,7 +1679,7 @@ struct FilteredCategoryDayBudgetView: View {
     @Binding var totalSpent: Double
     @AppStorage("currency", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var currency: String = (Locale.current.currencyCode ?? "USD")
     var currencySymbol: String {
-        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency)!
+        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency) ?? currency
     }
 
     var date: Date
@@ -1886,13 +1886,13 @@ struct TimeMainBudgetView: View {
             dateFormatter.dateFormat = "d MMM"
             return dateFormatter.string(from: startDate) + " - " + dateFormatter.string(from: endDate)
         } else if budgetType == 3 {
-            var endDate = Calendar.current.date(byAdding: .month, value: 1, to: startDate)!
-            endDate = Calendar.current.date(byAdding: .day, value: -1, to: endDate)!
+            var endDate = Calendar.current.date(byAdding: .month, value: 1, to: startDate) ?? startDate
+            endDate = Calendar.current.date(byAdding: .day, value: -1, to: endDate) ?? endDate
             dateFormatter.dateFormat = "d MMM"
             return dateFormatter.string(from: startDate) + " - " + dateFormatter.string(from: endDate)
         } else if budgetType == 4 {
-            var endDate = Calendar.current.date(byAdding: .year, value: 1, to: startDate)!
-            endDate = Calendar.current.date(byAdding: .day, value: -1, to: endDate)!
+            var endDate = Calendar.current.date(byAdding: .year, value: 1, to: startDate) ?? startDate
+            endDate = Calendar.current.date(byAdding: .day, value: -1, to: endDate) ?? endDate
             dateFormatter.dateFormat = "d MMM yy"
             return dateFormatter.string(from: startDate) + " - " + dateFormatter.string(from: endDate)
         } else {
@@ -1923,7 +1923,7 @@ struct TimeMainBudgetView: View {
 
     @AppStorage("currency", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var currency: String = (Locale.current.currencyCode ?? "USD")
     var currencySymbol: String {
-        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency)!
+        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency) ?? currency
     }
 
     var difference: Double {
@@ -1955,11 +1955,11 @@ struct TimeMainBudgetView: View {
                     return String(localized: "left \(weekString)")
                 } else if budgetType == 3 {
                     let components = Calendar.current.dateComponents([.month], from: startDate, to: budget.wrappedDate)
-                    let monthString = String(localized: "\(components.month!) months ago")
+                    let monthString = String(localized: "\((components.month ?? 0)) months ago")
                     return String(localized: "left \(monthString)")
                 } else if budgetType == 4 {
                     let components = Calendar.current.dateComponents([.year], from: startDate, to: budget.wrappedDate)
-                    let yearString = String(localized: "\(components.year!) months ago")
+                    let yearString = String(localized: "\((components.year ?? 0)) months ago")
                     return String(localized: "left \(yearString)")
                 } else {
                     return ""
@@ -1989,11 +1989,11 @@ struct TimeMainBudgetView: View {
                     return String(localized: "over \(weekString)")
                 } else if budgetType == 3 {
                     let components = Calendar.current.dateComponents([.month], from: startDate, to: budget.wrappedDate)
-                    let monthString = String(localized: "\(components.month!) months ago")
+                    let monthString = String(localized: "\((components.month ?? 0)) months ago")
                     return String(localized: "over \(monthString)")
                 } else if budgetType == 4 {
                     let components = Calendar.current.dateComponents([.year], from: startDate, to: budget.wrappedDate)
-                    let yearString = String(localized: "\(components.year!) months ago")
+                    let yearString = String(localized: "\((components.year ?? 0)) months ago")
                     return String(localized: "over \(yearString)")
                 } else {
                     return ""
@@ -2014,16 +2014,16 @@ struct TimeMainBudgetView: View {
             return 7 - (components.day ?? 0)
         } else if budgetType == 3 {
             let components1 = calendar.dateComponents([.day], from: budget.wrappedDate, to: budget.endDate)
-            let numberOfDays = components1.day!
+            let numberOfDays = (components1.day ?? 0)
             let components2 = calendar.dateComponents([.day], from: budget.wrappedDate, to: Date.now)
-            let numberOfDaysPast = components2.day!
+            let numberOfDaysPast = (components2.day ?? 0)
 
             return Int(numberOfDays - numberOfDaysPast)
         } else if budgetType == 4 {
             let components1 = calendar.dateComponents([.day], from: budget.wrappedDate, to: budget.endDate)
-            let numberOfDays = components1.day!
+            let numberOfDays = (components1.day ?? 0)
             let components2 = calendar.dateComponents([.day], from: budget.wrappedDate, to: Date.now)
-            let numberOfDaysPast = components2.day!
+            let numberOfDaysPast = (components2.day ?? 0)
             return Int(numberOfDays - numberOfDaysPast)
         } else {
             return 0
@@ -2290,15 +2290,15 @@ struct BudgetStepperView: View {
 
     var endDate: Date {
         if type == 1 {
-            return Calendar.current.date(byAdding: .day, value: 1, to: date)!
+            return Calendar.current.date(byAdding: .day, value: 1, to: date) ?? date
         } else if type == 2 {
-            return Calendar.current.date(byAdding: .day, value: 6, to: date)!
+            return Calendar.current.date(byAdding: .day, value: 6, to: date) ?? date
         } else if type == 3 {
-            let holdingDate = Calendar.current.date(byAdding: .month, value: 1, to: date)!
-            return Calendar.current.date(byAdding: .day, value: -1, to: holdingDate)!
+            let holdingDate = Calendar.current.date(byAdding: .month, value: 1, to: date) ?? date
+            return Calendar.current.date(byAdding: .day, value: -1, to: holdingDate) ?? holdingDate
         } else if type == 4 {
-            let holdingDate = Calendar.current.date(byAdding: .year, value: 1, to: date)!
-            return Calendar.current.date(byAdding: .day, value: -1, to: holdingDate)!
+            let holdingDate = Calendar.current.date(byAdding: .year, value: 1, to: date) ?? date
+            return Calendar.current.date(byAdding: .day, value: -1, to: holdingDate) ?? holdingDate
         }
 
         return startDate
@@ -2327,13 +2327,13 @@ struct BudgetStepperView: View {
             StepperButtonView(left: true, disabled: date <= firstDate) {
                 if date > firstDate {
                     if type == 1 {
-                        date = Calendar.current.date(byAdding: .day, value: -1, to: date)!
+                        date = Calendar.current.date(byAdding: .day, value: -1, to: date) ?? date
                     } else if type == 2 {
-                        date = Calendar.current.date(byAdding: .day, value: -7, to: date)!
+                        date = Calendar.current.date(byAdding: .day, value: -7, to: date) ?? date
                     } else if type == 3 {
-                        date = Calendar.current.date(byAdding: .month, value: -1, to: date)!
+                        date = Calendar.current.date(byAdding: .month, value: -1, to: date) ?? date
                     } else if type == 4 {
-                        date = Calendar.current.date(byAdding: .year, value: -1, to: date)!
+                        date = Calendar.current.date(byAdding: .year, value: -1, to: date) ?? date
                     }
                 }
             }
@@ -2348,13 +2348,13 @@ struct BudgetStepperView: View {
             StepperButtonView(left: false, disabled: date == startDate) {
                 if date < startDate {
                     if type == 1 {
-                        date = Calendar.current.date(byAdding: .day, value: 1, to: date)!
+                        date = Calendar.current.date(byAdding: .day, value: 1, to: date) ?? date
                     } else if type == 2 {
-                        date = Calendar.current.date(byAdding: .day, value: 7, to: date)!
+                        date = Calendar.current.date(byAdding: .day, value: 7, to: date) ?? date
                     } else if type == 3 {
-                        date = Calendar.current.date(byAdding: .month, value: 1, to: date)!
+                        date = Calendar.current.date(byAdding: .month, value: 1, to: date) ?? date
                     } else if type == 4 {
-                        date = Calendar.current.date(byAdding: .year, value: -1, to: date)!
+                        date = Calendar.current.date(byAdding: .year, value: -1, to: date) ?? date
                     }
                 }
             }
