@@ -1431,6 +1431,7 @@ struct NoteView: View {
                 if note.isEmpty {
                     Text("Add Note")
                         .foregroundColor(Color.SubtitleText)
+                        .allowsHitTesting(false)
                 }
             }
             .font(.system(.body, design: .rounded).weight(.semibold))

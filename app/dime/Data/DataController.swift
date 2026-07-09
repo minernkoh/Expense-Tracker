@@ -179,6 +179,15 @@ class DataController: ObservableObject {
     }
 
     func updateRecurringTransaction(transaction: Transaction) {
+        // A recurring type outside 1-3 or a non-positive coefficient (only possible via
+        // corrupted/synced data) would either crash the loop below or stop the date from
+        // advancing, spawning duplicate transactions forever. Neutralise such records instead.
+        guard (1 ... 3).contains(transaction.recurringType), transaction.recurringCoefficient > 0 else {
+            transaction.recurringType = 0
+            save()
+            return
+        }
+
         if transaction.nextTransactionDate < Calendar.current.startOfDay(for: Date.now) {
             var holdingDate = transaction.nextTransactionDate
 
@@ -196,28 +205,33 @@ class DataController: ObservableObject {
 
                 let dateComponents = calendar.dateComponents([.month, .year], from: holdingDate)
 
-                newTransaction.month = calendar.date(from: dateComponents)!
+                newTransaction.month = calendar.date(from: dateComponents) ?? holdingDate
 
                 newTransaction.onceRecurring = true
 
                 var newDate: Date?
 
                 if transaction.recurringType == 1 {
-                    newDate = Calendar.current.date(byAdding: .day, value: Int(transaction.recurringCoefficient), to: holdingDate)!
+                    newDate = Calendar.current.date(byAdding: .day, value: Int(transaction.recurringCoefficient), to: holdingDate)
                 } else if transaction.recurringType == 2 {
-                    newDate = Calendar.current.date(byAdding: .day, value: Int(transaction.recurringCoefficient * 7), to: holdingDate)!
+                    newDate = Calendar.current.date(byAdding: .day, value: Int(transaction.recurringCoefficient * 7), to: holdingDate)
                 } else if transaction.recurringType == 3 {
-                    newDate = Calendar.current.date(byAdding: .month, value: Int(transaction.recurringCoefficient), to: holdingDate)!
+                    newDate = Calendar.current.date(byAdding: .month, value: Int(transaction.recurringCoefficient), to: holdingDate)
                 }
 
-                if newDate! > Calendar.current.startOfDay(for: Date.now) {
+                guard let nextDate = newDate, nextDate > holdingDate else {
+                    newTransaction.recurringType = 0
+                    break
+                }
+
+                if nextDate > Calendar.current.startOfDay(for: Date.now) {
                     newTransaction.recurringType = transaction.recurringType
                     newTransaction.recurringCoefficient = transaction.recurringCoefficient
                 } else {
                     newTransaction.recurringType = 0
                 }
 
-                holdingDate = newDate!
+                holdingDate = nextDate
             }
 
             transaction.recurringType = 0
@@ -238,7 +252,7 @@ class DataController: ObservableObject {
 
             let dateComponents = calendar.dateComponents([.month, .year], from: transaction.nextTransactionDate)
 
-            newTransaction.month = calendar.date(from: dateComponents)!
+            newTransaction.month = calendar.date(from: dateComponents) ?? transaction.nextTransactionDate
 
             newTransaction.onceRecurring = true
             newTransaction.recurringType = transaction.recurringType
@@ -262,14 +276,16 @@ class DataController: ObservableObject {
         let budgets = results(for: fetchRequestForBudgets())
         let mainBudget = results(for: fetchRequestForMainBudget())
 
+        // The extra `endDate > wrappedDate` condition guards against budgets whose
+        // `type` is out of range (endDate == startDate), which would loop forever.
         budgets.forEach { budget in
-            while budget.endDate <= Date.now {
+            while budget.endDate <= Date.now, budget.endDate > budget.wrappedDate {
                 budget.startDate = budget.endDate
             }
         }
 
         mainBudget.forEach { budget in
-            while budget.endDate <= Date.now {
+            while budget.endDate <= Date.now, budget.endDate > budget.wrappedDate {
                 budget.startDate = budget.endDate
             }
         }

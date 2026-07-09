@@ -29,12 +29,14 @@ extension Transaction {
     }
 
     var nextTransactionDate: Date {
+        let base = day ?? Date.now
+
         if recurringType == 1 {
-            return Calendar.current.date(byAdding: .day, value: Int(recurringCoefficient), to: day ?? Date.now)!
+            return Calendar.current.date(byAdding: .day, value: Int(recurringCoefficient), to: base) ?? base
         } else if recurringType == 2 {
-            return Calendar.current.date(byAdding: .day, value: Int(recurringCoefficient * 7), to: day ?? Date.now)!
+            return Calendar.current.date(byAdding: .day, value: Int(recurringCoefficient * 7), to: base) ?? base
         } else if recurringType == 3 {
-            return Calendar.current.date(byAdding: .month, value: Int(recurringCoefficient), to: day ?? Date.now)!
+            return Calendar.current.date(byAdding: .month, value: Int(recurringCoefficient), to: base) ?? base
         }
 
         return date ?? Date.now
@@ -114,16 +116,18 @@ public extension Budget {
     }
 
     var endDate: Date {
+        let start = startDate ?? Date.now
+
         if type == 1 {
-            return Calendar.current.date(byAdding: .day, value: 1, to: startDate ?? Date.now)!
+            return Calendar.current.date(byAdding: .day, value: 1, to: start) ?? start
         } else if type == 2 {
-            return Calendar.current.date(byAdding: .day, value: 7, to: startDate ?? Date.now)!
+            return Calendar.current.date(byAdding: .day, value: 7, to: start) ?? start
         } else if type == 3 {
-            return Calendar.current.date(byAdding: .month, value: 1, to: startDate ?? Date.now)!
+            return Calendar.current.date(byAdding: .month, value: 1, to: start) ?? start
         } else if type == 4 {
-            return Calendar.current.date(byAdding: .year, value: 1, to: startDate ?? Date.now)!
+            return Calendar.current.date(byAdding: .year, value: 1, to: start) ?? start
         }
-        return startDate ?? Date.now
+        return start
     }
 }
 
@@ -133,16 +137,18 @@ public extension MainBudget {
     }
 
     var endDate: Date {
+        let start = startDate ?? Date.now
+
         if type == 1 {
-            return Calendar.current.date(byAdding: .day, value: 1, to: startDate ?? Date.now)!
+            return Calendar.current.date(byAdding: .day, value: 1, to: start) ?? start
         } else if type == 2 {
-            return Calendar.current.date(byAdding: .day, value: 7, to: startDate ?? Date.now)!
+            return Calendar.current.date(byAdding: .day, value: 7, to: start) ?? start
         } else if type == 3 {
-            return Calendar.current.date(byAdding: .month, value: 1, to: startDate ?? Date.now)!
+            return Calendar.current.date(byAdding: .month, value: 1, to: start) ?? start
         } else if type == 4 {
-            return Calendar.current.date(byAdding: .year, value: 1, to: startDate ?? Date.now)!
+            return Calendar.current.date(byAdding: .year, value: 1, to: start) ?? start
         }
 
-        return startDate ?? Date.now
+        return start
     }
 }
