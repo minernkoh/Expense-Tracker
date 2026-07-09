@@ -106,13 +106,13 @@ struct MainBudgetWidgetEntryView: View {
         case 2:
             dateFormatter.dateFormat = "d MMM"
             let endComponents = DateComponents(day: 7, second: -1)
-            let endWeekDate = Calendar.current.date(byAdding: endComponents, to: entry.startDate)!
+            let endWeekDate = Calendar.current.date(byAdding: endComponents, to: entry.startDate) ?? entry.startDate
             return formatDateRange(date1: entry.startDate, date2: endWeekDate)
 //            return dateFormatter.string(from: entry.startDate) + " - " + dateFormatter.string(from: endWeekDate)
         case 3:
             dateFormatter.dateFormat = "d MMM"
             let endComponents = DateComponents(month: 1, second: -1)
-            let endWeekDate = Calendar.current.date(byAdding: endComponents, to: entry.startDate)!
+            let endWeekDate = Calendar.current.date(byAdding: endComponents, to: entry.startDate) ?? entry.startDate
             return formatDateRange(date1: entry.startDate, date2: endWeekDate)
 //            return dateFormatter.string(from: entry.startDate) + " - " + dateFormatter.string(from: endWeekDate)
         case 4:
@@ -155,9 +155,9 @@ struct MainBudgetWidgetEntryView: View {
         return size > systemSmallWidgetText.widthOfRoundedString(size: 10, weight: .semibold)
     }
 
-    @AppStorage("currency", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var currency: String = Locale.current.currencyCode!
+    @AppStorage("currency", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var currency: String = (Locale.current.currencyCode ?? "USD")
     var currencySymbol: String {
-        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency)!
+        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency) ?? currency
     }
 
     @AppStorage("showCents", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var showCents: Bool = true
@@ -513,7 +513,7 @@ func formatDateRange(date1: Date, date2: Date) -> String {
     if components1.month == components2.month {
         dateFormatter.dateFormat = "MMM"
         let dateString = dateFormatter.string(from: date1)
-        return "\(components1.day!) - \(components2.day!) \(dateString)"
+        return "\((components1.day ?? 0)) - \((components2.day ?? 0)) \(dateString)"
     } else {
         dateFormatter.dateFormat = "d MMM"
         let startDateString = dateFormatter.string(from: date1)

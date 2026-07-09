@@ -24,7 +24,7 @@ struct ContentView: View {
     // converts category colors to hex codes
     @AppStorage("dataMigration2", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var dataMigration2: Bool = true
 
-    @AppStorage("currency", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var currency: String = Locale.current.currencyCode!
+    @AppStorage("currency", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var currency: String = (Locale.current.currencyCode ?? "USD")
 
     @State var showIntro: Bool = false
     @State var showUpdate: Bool = false
@@ -61,7 +61,7 @@ struct ContentView: View {
         }
         .ignoresSafeArea(.keyboard)
         .onAppear {
-//            UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.set(false, forKey: "newTransactionAdded")
+//            (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).set(false, forKey: "newTransactionAdded")
 //            WidgetCenter.shared.reloadTimelines(ofKind: "TemplateTransactions")
 
             if appLockVM.isAppLockEnabled {
@@ -90,9 +90,9 @@ struct ContentView: View {
                 defaults.set(true, forKey: "animated")
 
                 if NSUbiquitousKeyValueStore.default.string(forKey: "currency") == nil {
-                    NSUbiquitousKeyValueStore.default.set(Locale.current.currencyCode!, forKey: "currency")
+                    NSUbiquitousKeyValueStore.default.set((Locale.current.currencyCode ?? "USD"), forKey: "currency")
                 } else {
-                    currency = NSUbiquitousKeyValueStore.default.string(forKey: "currency")!
+                    currency = NSUbiquitousKeyValueStore.default.string(forKey: "currency") ?? (Locale.current.currencyCode ?? "USD")
                 }
 
                 defaults.set(2, forKey: "numberEntryType")
@@ -100,8 +100,8 @@ struct ContentView: View {
                 if let holdingCurrency = NSUbiquitousKeyValueStore.default.string(forKey: "currency") {
                     currency = holdingCurrency
                 } else {
-                    currency = Locale.current.currencyCode!
-                    NSUbiquitousKeyValueStore.default.set(Locale.current.currencyCode!, forKey: "currency")
+                    currency = (Locale.current.currencyCode ?? "USD")
+                    NSUbiquitousKeyValueStore.default.set((Locale.current.currencyCode ?? "USD"), forKey: "currency")
                 }
             }
 

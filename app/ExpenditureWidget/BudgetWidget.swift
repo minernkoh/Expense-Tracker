@@ -75,14 +75,14 @@ struct BudgetWidgetProvider: IntentTimelineProvider {
             let calendar = Calendar.current
 
             if budget.type == 1 {
-                let components = calendar.dateComponents([.minute], from: budget.startDate!, to: Date.now)
-                percentageOfDays = Double(components.minute!) / 1440
+                let components = calendar.dateComponents([.minute], from: (budget.startDate ?? Date.now), to: Date.now)
+                percentageOfDays = Double((components.minute ?? 0)) / 1440
             } else {
-                let components1 = calendar.dateComponents([.day], from: budget.startDate!, to: budget.endDate)
-                let numberOfDays = components1.day!
+                let components1 = calendar.dateComponents([.day], from: (budget.startDate ?? Date.now), to: budget.endDate)
+                let numberOfDays = (components1.day ?? 0)
 
-                let components2 = calendar.dateComponents([.day], from: budget.startDate!, to: Date.now)
-                let numberOfDaysPast = components2.day!
+                let components2 = calendar.dateComponents([.day], from: (budget.startDate ?? Date.now), to: Date.now)
+                let numberOfDaysPast = (components2.day ?? 0)
 
                 percentageOfDays = Double(numberOfDaysPast) / Double(numberOfDays)
             }
@@ -387,9 +387,9 @@ struct WidgetBudgetDollarView: View {
     var amount: Double
     var red: Bool
 
-    @AppStorage("currency", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var currency: String = Locale.current.currencyCode!
+    @AppStorage("currency", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var currency: String = (Locale.current.currencyCode ?? "USD")
     var currencySymbol: String {
-        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency)!
+        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency) ?? currency
     }
 
     var body: some View {

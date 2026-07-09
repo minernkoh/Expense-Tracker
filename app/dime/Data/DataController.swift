@@ -7,6 +7,7 @@
 
 import CoreData
 import Foundation
+import os
 import SwiftUI
 import WidgetKit
 
@@ -29,6 +30,8 @@ enum CustomError: Swift.Error, CustomLocalizedStringResourceConvertible {
 
 class DataController: ObservableObject {
     static let shared = DataController()
+
+    private static let logger = Logger(subsystem: "com.rafaelsoh.dime", category: "DataController")
 
     var container = NSPersistentCloudKitContainer(name: "MainModel")
 
@@ -109,11 +112,11 @@ class DataController: ObservableObject {
 
     var addedTransaction: Bool {
         get {
-            UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.bool(forKey: "newTransactionAdded")
+            (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).bool(forKey: "newTransactionAdded")
         }
 
         set {
-            UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.set(newValue, forKey: "newTransactionAdded")
+            (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).set(newValue, forKey: "newTransactionAdded")
         }
     }
 
@@ -138,9 +141,16 @@ class DataController: ObservableObject {
     }
 
     func save() {
-        if container.viewContext.hasChanges {
-            try? container.viewContext.save()
+        guard container.viewContext.hasChanges else { return }
+
+        do {
+            try container.viewContext.save()
             WidgetCenter.shared.reloadAllTimelines()
+        } catch {
+            // Don't reload widgets on failure: the persisted store is unchanged, so refreshing
+            // them would surface stale-but-presented-as-current data. Surface the error to the
+            // unified log instead of swallowing it silently.
+            DataController.logger.error("Failed to save Core Data context: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -383,7 +393,7 @@ class DataController: ObservableObject {
 
         var calendar = Calendar(identifier: .gregorian)
 
-        calendar.firstWeekday = UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.integer(forKey: "firstWeekday")
+        calendar.firstWeekday = (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).integer(forKey: "firstWeekday")
         calendar.minimumDaysInFirstWeek = 4
 
         switch type {
@@ -391,7 +401,7 @@ class DataController: ObservableObject {
             return itemRequest
         case .day:
             let today = calendar.startOfDay(for: Date.now)
-            let nextDay = calendar.date(byAdding: .day, value: 1, to: today)!
+            let nextDay = calendar.date(byAdding: .day, value: 1, to: today) ?? today
 
             let startPredicate = NSPredicate(format: "%K >= %@", #keyPath(Transaction.date), today as CVarArg)
             let endPredicate = NSPredicate(format: "%K < %@", #keyPath(Transaction.date), nextDay as CVarArg)
@@ -407,8 +417,8 @@ class DataController: ObservableObject {
         case .week:
             let dateComponents = calendar.dateComponents([.weekOfYear, .yearForWeekOfYear], from: Date.now)
 
-            let thisWeek = calendar.date(from: dateComponents)!
-            let nextWeek = calendar.date(byAdding: .day, value: 7, to: thisWeek)!
+            let thisWeek = calendar.date(from: dateComponents) ?? Date.now
+            let nextWeek = calendar.date(byAdding: .day, value: 7, to: thisWeek) ?? thisWeek
 
             let startPredicate = NSPredicate(format: "%K >= %@", #keyPath(Transaction.date), thisWeek as CVarArg)
             let endPredicate = NSPredicate(format: "%K < %@", #keyPath(Transaction.date), nextWeek as CVarArg)
@@ -424,8 +434,8 @@ class DataController: ObservableObject {
         case .month:
             let dateComponents = calendar.dateComponents([.month, .year], from: Date.now)
 
-            let thisMonth = calendar.date(from: dateComponents)!
-            let nextMonth = calendar.date(byAdding: .month, value: 1, to: thisMonth)!
+            let thisMonth = calendar.date(from: dateComponents) ?? Date.now
+            let nextMonth = calendar.date(byAdding: .month, value: 1, to: thisMonth) ?? thisMonth
 
             let startPredicate = NSPredicate(format: "%K >= %@", #keyPath(Transaction.date), thisMonth as CVarArg)
             let endPredicate = NSPredicate(format: "%K < %@", #keyPath(Transaction.date), nextMonth as CVarArg)
@@ -441,8 +451,8 @@ class DataController: ObservableObject {
         case .year:
             let dateComponents = calendar.dateComponents([.year], from: Date.now)
 
-            let thisYear = calendar.date(from: dateComponents)!
-            let nextYear = calendar.date(byAdding: .year, value: 1, to: thisYear)!
+            let thisYear = calendar.date(from: dateComponents) ?? Date.now
+            let nextYear = calendar.date(byAdding: .year, value: 1, to: thisYear) ?? thisYear
 
             let startPredicate = NSPredicate(format: "%K >= %@", #keyPath(Transaction.date), thisYear as CVarArg)
             let endPredicate = NSPredicate(format: "%K < %@", #keyPath(Transaction.date), nextYear as CVarArg)
@@ -706,7 +716,7 @@ class DataController: ObservableObject {
 
         var calendar = Calendar(identifier: .gregorian)
 
-        calendar.firstWeekday = UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.integer(forKey: "firstWeekday")
+        calendar.firstWeekday = (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).integer(forKey: "firstWeekday")
         calendar.minimumDaysInFirstWeek = 4
 
         let dateCapPredicate = NSPredicate(format: "%K <= %@", #keyPath(Transaction.date), Date.now as CVarArg)
@@ -751,16 +761,16 @@ class DataController: ObservableObject {
                 startPredicate = NSPredicate(format: "%K >= %@", #keyPath(Transaction.date), today as CVarArg)
             } else if type == 2 {
                 let dateComponents = calendar.dateComponents([.weekOfYear, .yearForWeekOfYear], from: Date.now)
-                let thisWeek = calendar.date(from: dateComponents)!
+                let thisWeek = calendar.date(from: dateComponents) ?? Date.now
                 startPredicate = NSPredicate(format: "%K >= %@", #keyPath(Transaction.date), thisWeek as CVarArg)
             } else if type == 3 {
-                let startOfMonth = UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.integer(forKey: "firstDayOfMonth")
+                let startOfMonth = (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).integer(forKey: "firstDayOfMonth")
 
                 let thisMonth = getStartOfMonth(startDay: startOfMonth)
                 startPredicate = NSPredicate(format: "%K >= %@", #keyPath(Transaction.date), thisMonth as CVarArg)
             } else {
                 let dateComponents = calendar.dateComponents([.year], from: Date.now)
-                let thisYear = calendar.date(from: dateComponents)!
+                let thisYear = calendar.date(from: dateComponents) ?? Date.now
                 startPredicate = NSPredicate(format: "%K >= %@", #keyPath(Transaction.date), thisYear as CVarArg)
             }
 
@@ -883,8 +893,8 @@ class DataController: ObservableObject {
         var totalForDay = 0.0
 
         if type < 3 {
-            let lastWeek = Calendar.current.date(byAdding: .day, value: -7, to: today)!
-            var changingDate = Calendar.current.date(byAdding: .second, value: 86399, to: lastWeek)!
+            let lastWeek = Calendar.current.date(byAdding: .day, value: -7, to: today) ?? today
+            var changingDate = Calendar.current.date(byAdding: .second, value: 86399, to: lastWeek) ?? lastWeek
 
             for transaction in transactions {
                 if transaction.wrappedDate < changingDate {
@@ -896,12 +906,12 @@ class DataController: ObservableObject {
                 } else {
                     let newData = LineGraphDataPoint(date: changingDate, amount: totalForDay)
                     holdingDataPoints.append(newData)
-                    changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate)!
+                    changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate) ?? changingDate
 
                     while transaction.wrappedDate > changingDate {
                         let anotherNewData = LineGraphDataPoint(date: changingDate, amount: totalForDay)
                         holdingDataPoints.append(anotherNewData)
-                        changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate)!
+                        changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate) ?? changingDate
                     }
 
                     if transaction.income {
@@ -916,20 +926,20 @@ class DataController: ObservableObject {
             holdingDataPoints.append(newData)
 
             if changingDate < today {
-                changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate)!
+                changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate) ?? changingDate
 
                 while changingDate < today {
                     let anotherNewData = LineGraphDataPoint(date: changingDate, amount: totalForDay)
                     holdingDataPoints.append(anotherNewData)
-                    changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate)!
+                    changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate) ?? changingDate
                 }
 
                 let finalDate = LineGraphDataPoint(date: today, amount: totalForDay)
                 holdingDataPoints.append(finalDate)
             }
         } else if type == 3 {
-            let lastMonth = Calendar.current.date(byAdding: .month, value: -1, to: today)!
-            var changingDate = Calendar.current.date(byAdding: .second, value: 86399, to: lastMonth)!
+            let lastMonth = Calendar.current.date(byAdding: .month, value: -1, to: today) ?? today
+            var changingDate = Calendar.current.date(byAdding: .second, value: 86399, to: lastMonth) ?? lastMonth
 
             for transaction in transactions {
                 if transaction.wrappedDate < changingDate {
@@ -941,12 +951,12 @@ class DataController: ObservableObject {
                 } else {
                     let newData = LineGraphDataPoint(date: changingDate, amount: totalForDay)
                     holdingDataPoints.append(newData)
-                    changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate)!
+                    changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate) ?? changingDate
 
                     while transaction.wrappedDate > changingDate {
                         let anotherNewData = LineGraphDataPoint(date: changingDate, amount: totalForDay)
                         holdingDataPoints.append(anotherNewData)
-                        changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate)!
+                        changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate) ?? changingDate
                     }
 
                     if transaction.income {
@@ -961,12 +971,12 @@ class DataController: ObservableObject {
             holdingDataPoints.append(newData)
 
             if changingDate < today {
-                changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate)!
+                changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate) ?? changingDate
 
                 while changingDate < today {
                     let anotherNewData = LineGraphDataPoint(date: changingDate, amount: totalForDay)
                     holdingDataPoints.append(anotherNewData)
-                    changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate)!
+                    changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate) ?? changingDate
                 }
 
                 let finalDate = LineGraphDataPoint(date: today, amount: totalForDay)
@@ -974,9 +984,9 @@ class DataController: ObservableObject {
             }
         } else if type == 4 {
             let dateComponents = calendar.dateComponents([.month, .year], from: Date.now)
-            let thisMonth = calendar.date(from: dateComponents)!
-            let nextMonth = calendar.date(byAdding: .month, value: 1, to: thisMonth)!
-            var changingDate = calendar.date(byAdding: .year, value: -1, to: nextMonth)!
+            let thisMonth = calendar.date(from: dateComponents) ?? Date.now
+            let nextMonth = calendar.date(byAdding: .month, value: 1, to: thisMonth) ?? thisMonth
+            var changingDate = calendar.date(byAdding: .year, value: -1, to: nextMonth) ?? nextMonth
 
             for transaction in transactions {
                 if transaction.wrappedDate < changingDate {
@@ -986,16 +996,16 @@ class DataController: ObservableObject {
                         totalForDay -= transaction.amount
                     }
                 } else {
-                    let dataDate = calendar.date(byAdding: .day, value: -1, to: changingDate)!
+                    let dataDate = calendar.date(byAdding: .day, value: -1, to: changingDate) ?? changingDate
                     let newData = LineGraphDataPoint(date: dataDate, amount: totalForDay)
                     holdingDataPoints.append(newData)
-                    changingDate = Calendar.current.date(byAdding: .month, value: 1, to: changingDate)!
+                    changingDate = Calendar.current.date(byAdding: .month, value: 1, to: changingDate) ?? changingDate
 
                     while transaction.wrappedDate > changingDate {
-                        let newDataDate = calendar.date(byAdding: .day, value: -1, to: changingDate)!
+                        let newDataDate = calendar.date(byAdding: .day, value: -1, to: changingDate) ?? changingDate
                         let anotherNewData = LineGraphDataPoint(date: newDataDate, amount: totalForDay)
                         holdingDataPoints.append(anotherNewData)
-                        changingDate = Calendar.current.date(byAdding: .month, value: 1, to: changingDate)!
+                        changingDate = Calendar.current.date(byAdding: .month, value: 1, to: changingDate) ?? changingDate
                     }
 
                     if transaction.income {
@@ -1006,18 +1016,18 @@ class DataController: ObservableObject {
                 }
             }
 
-            let dataDate = calendar.date(byAdding: .day, value: -1, to: changingDate)!
+            let dataDate = calendar.date(byAdding: .day, value: -1, to: changingDate) ?? changingDate
             let newData = LineGraphDataPoint(date: dataDate, amount: totalForDay)
             holdingDataPoints.append(newData)
 
             if changingDate < nextMonth {
-                changingDate = Calendar.current.date(byAdding: .month, value: 1, to: changingDate)!
+                changingDate = Calendar.current.date(byAdding: .month, value: 1, to: changingDate) ?? changingDate
 
                 while changingDate < nextMonth {
-                    let anotherDataDate = calendar.date(byAdding: .day, value: -1, to: changingDate)!
+                    let anotherDataDate = calendar.date(byAdding: .day, value: -1, to: changingDate) ?? changingDate
                     let anotherNewData = LineGraphDataPoint(date: anotherDataDate, amount: totalForDay)
                     holdingDataPoints.append(anotherNewData)
-                    changingDate = Calendar.current.date(byAdding: .month, value: 1, to: changingDate)!
+                    changingDate = Calendar.current.date(byAdding: .month, value: 1, to: changingDate) ?? changingDate
                 }
 
                 let finalDate = LineGraphDataPoint(date: today, amount: totalForDay)
@@ -1039,8 +1049,8 @@ class DataController: ObservableObject {
         var totalForDay = 0.0
 
         if type < 3 {
-            let lastWeek = Calendar.current.date(byAdding: .day, value: -7, to: today)!
-            var changingDate = Calendar.current.date(byAdding: .second, value: 86399, to: lastWeek)!
+            let lastWeek = Calendar.current.date(byAdding: .day, value: -7, to: today) ?? today
+            var changingDate = Calendar.current.date(byAdding: .second, value: 86399, to: lastWeek) ?? lastWeek
 
             for transaction in transactions {
                 if transaction.wrappedDate > lastWeek {
@@ -1049,13 +1059,13 @@ class DataController: ObservableObject {
                     } else {
                         let newData = LineGraphDataPoint(date: changingDate, amount: totalForDay)
                         holdingDataPoints.append(newData)
-                        changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate)!
+                        changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate) ?? changingDate
                         totalForDay = 0
 
                         while transaction.wrappedDate > changingDate {
                             let anotherNewData = LineGraphDataPoint(date: changingDate, amount: 0)
                             holdingDataPoints.append(anotherNewData)
-                            changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate)!
+                            changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate) ?? changingDate
                         }
 
                         totalForDay += transaction.wrappedAmount
@@ -1068,20 +1078,20 @@ class DataController: ObservableObject {
             totalForDay = 0
 
             if changingDate < today {
-                changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate)!
+                changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate) ?? changingDate
 
                 while changingDate < today {
                     let anotherNewData = LineGraphDataPoint(date: changingDate, amount: 0)
                     holdingDataPoints.append(anotherNewData)
-                    changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate)!
+                    changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate) ?? changingDate
                 }
 
                 let finalDate = LineGraphDataPoint(date: today, amount: totalForDay)
                 holdingDataPoints.append(finalDate)
             }
         } else if type == 3 {
-            let lastMonth = Calendar.current.date(byAdding: .month, value: -1, to: today)!
-            var changingDate = Calendar.current.date(byAdding: .second, value: 86399, to: lastMonth)!
+            let lastMonth = Calendar.current.date(byAdding: .month, value: -1, to: today) ?? today
+            var changingDate = Calendar.current.date(byAdding: .second, value: 86399, to: lastMonth) ?? lastMonth
 
             for transaction in transactions {
                 if transaction.wrappedDate > lastMonth {
@@ -1090,13 +1100,13 @@ class DataController: ObservableObject {
                     } else {
                         let newData = LineGraphDataPoint(date: changingDate, amount: totalForDay)
                         holdingDataPoints.append(newData)
-                        changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate)!
+                        changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate) ?? changingDate
                         totalForDay = 0
 
                         while transaction.wrappedDate > changingDate {
                             let anotherNewData = LineGraphDataPoint(date: changingDate, amount: 0)
                             holdingDataPoints.append(anotherNewData)
-                            changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate)!
+                            changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate) ?? changingDate
                         }
 
                         totalForDay += transaction.wrappedAmount
@@ -1108,12 +1118,12 @@ class DataController: ObservableObject {
             holdingDataPoints.append(newData)
 
             if changingDate < today {
-                changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate)!
+                changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate) ?? changingDate
 
                 while changingDate < today {
                     let anotherNewData = LineGraphDataPoint(date: changingDate, amount: 0)
                     holdingDataPoints.append(anotherNewData)
-                    changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate)!
+                    changingDate = Calendar.current.date(byAdding: .day, value: 1, to: changingDate) ?? changingDate
                 }
 
                 let finalDate = LineGraphDataPoint(date: today, amount: 0)
@@ -1121,27 +1131,27 @@ class DataController: ObservableObject {
             }
         } else if type == 4 {
             let dateComponents = calendar.dateComponents([.month, .year], from: Date.now)
-            let thisMonth = calendar.date(from: dateComponents)!
-            let thisMonthLastYear = calendar.date(byAdding: .year, value: -1, to: thisMonth)!
-            let nextMonth = calendar.date(byAdding: .month, value: 1, to: thisMonth)!
-            var changingDate = calendar.date(byAdding: .year, value: -1, to: nextMonth)!
+            let thisMonth = calendar.date(from: dateComponents) ?? Date.now
+            let thisMonthLastYear = calendar.date(byAdding: .year, value: -1, to: thisMonth) ?? thisMonth
+            let nextMonth = calendar.date(byAdding: .month, value: 1, to: thisMonth) ?? thisMonth
+            var changingDate = calendar.date(byAdding: .year, value: -1, to: nextMonth) ?? nextMonth
 
             for transaction in transactions {
                 if transaction.wrappedDate > thisMonthLastYear {
                     if transaction.wrappedDate < changingDate {
                         totalForDay += transaction.wrappedAmount
                     } else {
-                        let dataDate = calendar.date(byAdding: .day, value: -1, to: changingDate)!
+                        let dataDate = calendar.date(byAdding: .day, value: -1, to: changingDate) ?? changingDate
                         let newData = LineGraphDataPoint(date: dataDate, amount: totalForDay)
                         holdingDataPoints.append(newData)
-                        changingDate = Calendar.current.date(byAdding: .month, value: 1, to: changingDate)!
+                        changingDate = Calendar.current.date(byAdding: .month, value: 1, to: changingDate) ?? changingDate
                         totalForDay = 0
 
                         while transaction.wrappedDate > changingDate {
-                            let newDataDate = calendar.date(byAdding: .day, value: -1, to: changingDate)!
+                            let newDataDate = calendar.date(byAdding: .day, value: -1, to: changingDate) ?? changingDate
                             let anotherNewData = LineGraphDataPoint(date: newDataDate, amount: 0)
                             holdingDataPoints.append(anotherNewData)
-                            changingDate = Calendar.current.date(byAdding: .month, value: 1, to: changingDate)!
+                            changingDate = Calendar.current.date(byAdding: .month, value: 1, to: changingDate) ?? changingDate
                         }
 
                         totalForDay += transaction.wrappedAmount
@@ -1149,18 +1159,18 @@ class DataController: ObservableObject {
                 }
             }
 
-            let dataDate = calendar.date(byAdding: .day, value: -1, to: changingDate)!
+            let dataDate = calendar.date(byAdding: .day, value: -1, to: changingDate) ?? changingDate
             let newData = LineGraphDataPoint(date: dataDate, amount: totalForDay)
             holdingDataPoints.append(newData)
 
             if changingDate < nextMonth {
-                changingDate = Calendar.current.date(byAdding: .month, value: 1, to: changingDate)!
+                changingDate = Calendar.current.date(byAdding: .month, value: 1, to: changingDate) ?? changingDate
 
                 while changingDate < nextMonth {
-                    let anotherDataDate = calendar.date(byAdding: .day, value: -1, to: changingDate)!
+                    let anotherDataDate = calendar.date(byAdding: .day, value: -1, to: changingDate) ?? changingDate
                     let anotherNewData = LineGraphDataPoint(date: anotherDataDate, amount: 0)
                     holdingDataPoints.append(anotherNewData)
-                    changingDate = Calendar.current.date(byAdding: .month, value: 1, to: changingDate)!
+                    changingDate = Calendar.current.date(byAdding: .month, value: 1, to: changingDate) ?? changingDate
                 }
 
                 let finalDate = LineGraphDataPoint(date: today, amount: 0)
@@ -1200,7 +1210,7 @@ class DataController: ObservableObject {
     func fetchRequestForMainBudgetTransactions(budget: MainBudget) -> NSFetchRequest<Transaction> {
         let itemRequest: NSFetchRequest<Transaction> = Transaction.fetchRequest()
 
-        let startPredicate = NSPredicate(format: "%K >= %@", #keyPath(Transaction.date), budget.startDate! as CVarArg)
+        let startPredicate = NSPredicate(format: "%K >= %@", #keyPath(Transaction.date), (budget.startDate ?? Date.distantPast) as CVarArg)
         let endPredicate = NSPredicate(format: "%K <= %@", #keyPath(Transaction.date), Date.now as CVarArg)
         let incomePredicate = NSPredicate(format: "income = %d", false)
 
@@ -1214,7 +1224,7 @@ class DataController: ObservableObject {
     func fetchRequestForBudgetTransactions(budget: Budget) -> NSFetchRequest<Transaction> {
         let itemRequest: NSFetchRequest<Transaction> = Transaction.fetchRequest()
 
-        let startPredicate = NSPredicate(format: "%K >= %@", #keyPath(Transaction.date), budget.startDate! as CVarArg)
+        let startPredicate = NSPredicate(format: "%K >= %@", #keyPath(Transaction.date), (budget.startDate ?? Date.distantPast) as CVarArg)
         let endPredicate = NSPredicate(format: "%K <= %@", #keyPath(Transaction.date), Date.now as CVarArg)
         let categoryPredicate = NSPredicate(format: "%K == %@", #keyPath(Transaction.category), budget.category!)
         let incomePredicate = NSPredicate(format: "income = %d", false)
@@ -1258,7 +1268,7 @@ class DataController: ObservableObject {
             // calendar initialization
             var calendar = Calendar(identifier: .gregorian)
 
-            calendar.firstWeekday = UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.integer(forKey: "firstWeekday")
+            calendar.firstWeekday = (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).integer(forKey: "firstWeekday")
             calendar.minimumDaysInFirstWeek = 4
 
             var dictionary = [Date: Double]()
@@ -1268,7 +1278,7 @@ class DataController: ObservableObject {
             var weekAverage = 0.0
 
             for _ in 1 ... 7 {
-                nextDate = calendar.date(byAdding: .day, value: 1, to: iterativeDate)!
+                nextDate = calendar.date(byAdding: .day, value: 1, to: iterativeDate) ?? iterativeDate
 
                 let holding = currentTransactions.filter {
                     $0.wrappedDate >= iterativeDate && $0.wrappedDate < nextDate
@@ -1298,14 +1308,14 @@ class DataController: ObservableObject {
 
             let dateComponents = calendar.dateComponents([.weekOfYear, .yearForWeekOfYear], from: Date.now)
 
-            let currentWeek = calendar.date(from: dateComponents)!
+            let currentWeek = calendar.date(from: dateComponents) ?? Date.now
 
             if currentWeek == date {
 //                let fromDate = Calendar.current.startOfDay(for: currentWeek)
 //                let toDate = Calendar.current.startOfDay(for: Date.now)
                 let numberOfDays = Calendar.current.dateComponents([.day], from: currentWeek, to: Date.now)
 
-                weekAverage = totalForWeek / Double((numberOfDays.day! + 1))
+                weekAverage = totalForWeek / Double(((numberOfDays.day ?? 0) + 1))
             } else {
                 weekAverage = totalForWeek / 7
             }
@@ -1326,7 +1336,7 @@ class DataController: ObservableObject {
             var monthAverage = 0.0
 
             for _ in 1 ... range.count {
-                nextDate = calendar.date(byAdding: .day, value: 1, to: iterativeDate)!
+                nextDate = calendar.date(byAdding: .day, value: 1, to: iterativeDate) ?? iterativeDate
 
                 let holding = currentTransactions.filter {
                     $0.wrappedDate >= iterativeDate && $0.wrappedDate < nextDate
@@ -1359,7 +1369,7 @@ class DataController: ObservableObject {
             if next > Date.now {
                 let numDays = Calendar.current.dateComponents([.day], from: date, to: Date.now)
 
-                monthAverage = totalForMonth / Double((numDays.day! + 1))
+                monthAverage = totalForMonth / Double(((numDays.day ?? 0) + 1))
             } else {
                 monthAverage = totalForMonth / Double(range.count)
             }
@@ -1379,7 +1389,7 @@ class DataController: ObservableObject {
             var monthAverage = 0.0
 
             for _ in 1 ... 12 {
-                nextDate = calendar.date(byAdding: .month, value: 1, to: iterativeDate)!
+                nextDate = calendar.date(byAdding: .month, value: 1, to: iterativeDate) ?? iterativeDate
 
                 let holding = currentTransactions.filter {
                     $0.wrappedDate >= iterativeDate && $0.wrappedDate < nextDate
@@ -1409,14 +1419,14 @@ class DataController: ObservableObject {
 
             let dateComponents = calendar.dateComponents([.year], from: Date.now)
 
-            let currentYear = calendar.date(from: dateComponents)!
+            let currentYear = calendar.date(from: dateComponents) ?? Date.now
 
             if currentYear == date {
                 let fromDate = Calendar.current.startOfDay(for: currentYear)
                 let toDate = Calendar.current.startOfDay(for: Date.now)
                 let numDays = Calendar.current.dateComponents([.month], from: fromDate, to: toDate)
 
-                monthAverage = totalForYear / Double((numDays.month! + 1))
+                monthAverage = totalForYear / Double(((numDays.month ?? 0) + 1))
             } else {
                 monthAverage = totalForYear / 12
             }
@@ -1432,7 +1442,7 @@ class DataController: ObservableObject {
 
         var calendar = Calendar(identifier: .gregorian)
 
-        calendar.firstWeekday = UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.integer(forKey: "firstWeekday")
+        calendar.firstWeekday = (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).integer(forKey: "firstWeekday")
         calendar.minimumDaysInFirstWeek = 4
 
         let startPredicate = NSPredicate(format: "%K >= %@", #keyPath(Transaction.date), date as CVarArg)
@@ -1520,7 +1530,7 @@ class DataController: ObservableObject {
             if calendar.isDate(date, equalTo: Date.now, toGranularity: .weekOfYear) {
                 let numberOfDays = Calendar.current.dateComponents([.day], from: date, to: Date.now)
 
-                return (holdingSpent, holdingIncome, absoluteNet, positive, abs(net) / Double(numberOfDays.day! + 1))
+                return (holdingSpent, holdingIncome, absoluteNet, positive, abs(net) / Double((numberOfDays.day ?? 0) + 1))
             } else {
                 return (holdingSpent, holdingIncome, absoluteNet, positive, abs(net) / 7)
             }
@@ -1530,16 +1540,16 @@ class DataController: ObservableObject {
             if next > Date.now {
                 let numDays = Calendar.current.dateComponents([.day], from: date, to: Date.now)
 
-                return (holdingSpent, holdingIncome, absoluteNet, positive, abs(net) / Double(numDays.day! + 1))
+                return (holdingSpent, holdingIncome, absoluteNet, positive, abs(net) / Double((numDays.day ?? 0) + 1))
             } else {
                 let numDays = Calendar.current.dateComponents([.day], from: date, to: next)
 
-                return (holdingSpent, holdingIncome, absoluteNet, positive, abs(net) / Double(numDays.day! + 1))
+                return (holdingSpent, holdingIncome, absoluteNet, positive, abs(net) / Double((numDays.day ?? 0) + 1))
             }
 //            if calendar.isDate(date, equalTo: Date.now, toGranularity: .month) {
 //                let numDays = Calendar.current.dateComponents([.day], from: date, to: Date.now)
 //
-//                return (holdingSpent, holdingIncome, absoluteNet, positive, abs(net) / Double(numDays.day! + 1))
+//                return (holdingSpent, holdingIncome, absoluteNet, positive, abs(net) / Double((numDays.day ?? 0) + 1))
 //            } else {
 //
 //                let range = calendar.range(of: .day, in: .month, for: date)!
@@ -1551,7 +1561,7 @@ class DataController: ObservableObject {
             if calendar.isDate(date, equalTo: Date.now, toGranularity: .year) {
                 let numDays = Calendar.current.dateComponents([.month], from: date, to: Date.now)
 
-                return (holdingSpent, holdingIncome, absoluteNet, positive, abs(net) / Double(numDays.month! + 1))
+                return (holdingSpent, holdingIncome, absoluteNet, positive, abs(net) / Double((numDays.month ?? 0) + 1))
             } else {
                 return (holdingSpent, holdingIncome, absoluteNet, positive, abs(net) / 12)
             }
@@ -1563,7 +1573,7 @@ class DataController: ObservableObject {
 
         var calendar = Calendar(identifier: .gregorian)
 
-        calendar.firstWeekday = UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.integer(forKey: "firstWeekday")
+        calendar.firstWeekday = (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).integer(forKey: "firstWeekday")
         calendar.minimumDaysInFirstWeek = 4
 
         let endPredicate = NSPredicate(format: "%K < %@", #keyPath(Transaction.date), Date.now as CVarArg)
@@ -1580,11 +1590,11 @@ class DataController: ObservableObject {
         case .week:
             let dateComponents = calendar.dateComponents([.weekOfYear, .yearForWeekOfYear], from: Date.now)
 
-            startDate = calendar.date(from: dateComponents)!
+            startDate = calendar.date(from: dateComponents) ?? Date.now
 
             startPredicate = NSPredicate(format: "%K >= %@", #keyPath(Transaction.date), startDate as CVarArg)
         case .month:
-            let startOfMonth = UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.integer(forKey: "firstDayOfMonth")
+            let startOfMonth = (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).integer(forKey: "firstDayOfMonth")
 
             startDate = getStartOfMonth(startDay: startOfMonth)
 
@@ -1592,7 +1602,7 @@ class DataController: ObservableObject {
         case .year:
             let dateComponents = calendar.dateComponents([.year], from: Date.now)
 
-            startDate = calendar.date(from: dateComponents)!
+            startDate = calendar.date(from: dateComponents) ?? Date.now
 
             startPredicate = NSPredicate(format: "%K >= %@", #keyPath(Transaction.date), startDate as CVarArg)
         }
@@ -1612,7 +1622,7 @@ class DataController: ObservableObject {
 
         var calendar = Calendar(identifier: .gregorian)
 
-        calendar.firstWeekday = UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.integer(forKey: "firstWeekday")
+        calendar.firstWeekday = (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).integer(forKey: "firstWeekday")
         calendar.minimumDaysInFirstWeek = 4
 
         switch type {
@@ -1636,7 +1646,7 @@ class DataController: ObservableObject {
         case .week:
             let dateComponents = calendar.dateComponents([.weekOfYear, .yearForWeekOfYear], from: Date.now)
 
-            let thisWeek = calendar.date(from: dateComponents)!
+            let thisWeek = calendar.date(from: dateComponents) ?? Date.now
 
             let startPredicate = NSPredicate(format: "%K >= %@", #keyPath(Transaction.date), thisWeek as CVarArg)
             let endPredicate = NSPredicate(format: "%K < %@", #keyPath(Transaction.date), Date.now as CVarArg)
@@ -1653,7 +1663,7 @@ class DataController: ObservableObject {
         case .month:
             let dateComponents = calendar.dateComponents([.month, .year], from: Date.now)
 
-            let thisMonth = calendar.date(from: dateComponents)!
+            let thisMonth = calendar.date(from: dateComponents) ?? Date.now
 
             let startPredicate = NSPredicate(format: "%K >= %@", #keyPath(Transaction.date), thisMonth as CVarArg)
             let endPredicate = NSPredicate(format: "%K < %@", #keyPath(Transaction.date), Date.now as CVarArg)
@@ -1670,7 +1680,7 @@ class DataController: ObservableObject {
         case .year:
             let dateComponents = calendar.dateComponents([.year], from: Date.now)
 
-            let thisYear = calendar.date(from: dateComponents)!
+            let thisYear = calendar.date(from: dateComponents) ?? Date.now
 
             let startPredicate = NSPredicate(format: "%K >= %@", #keyPath(Transaction.date), thisYear as CVarArg)
             let endPredicate = NSPredicate(format: "%K < %@", #keyPath(Transaction.date), Date.now as CVarArg)
@@ -1705,19 +1715,19 @@ class DataController: ObservableObject {
             let calendar = Calendar.current
 
             if budget.type == 1 {
-                let components = calendar.dateComponents([.minute], from: budget.startDate!, to: Date.now)
-                percentageOfDays = Double(components.minute!) / 1440
+                let components = calendar.dateComponents([.minute], from: (budget.startDate ?? Date.now), to: Date.now)
+                percentageOfDays = Double((components.minute ?? 0)) / 1440
             } else {
-                let components1 = calendar.dateComponents([.day], from: budget.startDate!, to: budget.endDate)
-                let numberOfDays = components1.day!
+                let components1 = calendar.dateComponents([.day], from: (budget.startDate ?? Date.now), to: budget.endDate)
+                let numberOfDays = (components1.day ?? 0)
 
-                let components2 = calendar.dateComponents([.day], from: budget.startDate!, to: Date.now)
-                let numberOfDaysPast = components2.day!
+                let components2 = calendar.dateComponents([.day], from: (budget.startDate ?? Date.now), to: Date.now)
+                let numberOfDaysPast = (components2.day ?? 0)
 
                 percentageOfDays = Double(numberOfDaysPast) / Double(numberOfDays)
             }
 
-            return (true, holdingTotal, budget.amount, percentageOfDays, Int(budget.type), budget.startDate!)
+            return (true, holdingTotal, budget.amount, percentageOfDays, Int(budget.type), (budget.startDate ?? Date.now))
 
         } else {
             return (false, 0, 0, 0, 0, Date.now)

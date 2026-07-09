@@ -190,16 +190,16 @@ struct SettingsNotificationsView: View {
         .padding(.horizontal, 15)
         .background(Color.SettingsBackground, in: RoundedRectangle(cornerRadius: 9))
         .onChange(of: option) { newValue in
-          UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.set(
+          (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).set(
             option, forKey: "notificationOption")
 
           if newValue == 3 {
             let components = Calendar.current.dateComponents([.hour, .minute], from: customTime)
 
-            UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.set(
-              components.hour!, forKey: "customHour")
-            UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.set(
-              components.minute!, forKey: "customMinute")
+            (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).set(
+              (components.hour ?? 0), forKey: "customHour")
+            (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).set(
+              (components.minute ?? 0), forKey: "customMinute")
           }
 
           newNotification()
@@ -207,30 +207,30 @@ struct SettingsNotificationsView: View {
         .onChange(of: customTime) { _ in
           let components = Calendar.current.dateComponents([.hour, .minute], from: customTime)
 
-          UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.set(
-            components.hour!, forKey: "customHour")
-          UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.set(
-            components.minute!, forKey: "customMinute")
+          (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).set(
+            (components.hour ?? 0), forKey: "customHour")
+          (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).set(
+            (components.minute ?? 0), forKey: "customMinute")
 
           newNotification()
         }
         .onAppear {
-          if UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.object(
+          if (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).object(
             forKey: "notificationOption") != nil {
-            option = UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.integer(
+            option = (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).integer(
               forKey: "notificationOption")
           }
 
-          if UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.object(forKey: "customHour")
+          if (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).object(forKey: "customHour")
             != nil
-            && UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.object(forKey: "customMinute")
+            && (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).object(forKey: "customMinute")
               != nil {
             var components = DateComponents()
-            components.hour = UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.integer(
+            components.hour = (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).integer(
               forKey: "customHour")
-            components.minute = UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.integer(
+            components.minute = (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).integer(
               forKey: "customMinute")
-            customTime = Calendar.current.date(from: components)!
+            customTime = Calendar.current.date(from: components) ?? Date.now
           }
         }
       }
@@ -251,9 +251,9 @@ func newNotification() {
   var components = DateComponents()
   var option = 1
 
-  if UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.object(forKey: "notificationOption")
+  if (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).object(forKey: "notificationOption")
     != nil {
-    option = UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.integer(
+    option = (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).integer(
       forKey: "notificationOption")
   }
 
@@ -264,11 +264,11 @@ func newNotification() {
     components.hour = 20
     components.minute = 0
   } else {
-    if UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.object(forKey: "customHour") != nil,
-      UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.object(forKey: "customMinute") != nil {
-      components.hour = UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.integer(
+    if (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).object(forKey: "customHour") != nil,
+      (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).object(forKey: "customMinute") != nil {
+      components.hour = (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).integer(
         forKey: "customHour")
-      components.minute = UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.integer(
+      components.minute = (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).integer(
         forKey: "customMinute")
     } else {
       components.hour = 8

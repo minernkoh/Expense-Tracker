@@ -104,7 +104,7 @@ struct SettingsView: View {
     Bool = true
 
   @AppStorage("currency", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var currency:
-    String = Locale.current.currencyCode!
+    String = (Locale.current.currencyCode ?? "USD")
 
   @AppStorage("incomeTracking", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime"))
   var incomeTracking: Bool = true
@@ -217,9 +217,9 @@ struct SettingsView: View {
                   incomeTracking.toggle()
 
                   if !incomeTracking {
-                    UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.set(
+                    (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).set(
                       false, forKey: "insightsViewIncomeFiltering")
-                    UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.set(
+                    (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).set(
                       3, forKey: "logInsightsType")
                   }
                 })

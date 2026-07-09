@@ -70,7 +70,7 @@ struct InsightsProvider: IntentTimelineProvider {
             // calendar initialization
             var calendar = Calendar(identifier: .gregorian)
 
-            calendar.firstWeekday = UserDefaults(suiteName: "group.com.rafaelsoh.dime")!.integer(forKey: "firstWeekday")
+            calendar.firstWeekday = (UserDefaults(suiteName: "group.com.rafaelsoh.dime") ?? .standard).integer(forKey: "firstWeekday")
             calendar.minimumDaysInFirstWeek = 4
 
             var dictionary = [Date: Double]()
@@ -79,7 +79,7 @@ struct InsightsProvider: IntentTimelineProvider {
             var numberOfDays = 0
 
             for _ in 1 ... 7 {
-                nextDate = calendar.date(byAdding: .day, value: 1, to: iterativeDate)!
+                nextDate = calendar.date(byAdding: .day, value: 1, to: iterativeDate) ?? iterativeDate
 
                 let holding = transactions.filter {
                     $0.wrappedDate >= iterativeDate && $0.wrappedDate < nextDate
@@ -135,7 +135,7 @@ struct InsightsProvider: IntentTimelineProvider {
                 lhs.percent > rhs.percent
             })
 
-            return (totalForWeek, maximum, totalForWeek / Double((numberOfDaysPast.day! + 1)), numberOfDays, dates, dictionary, holdingCat)
+            return (totalForWeek, maximum, totalForWeek / Double(((numberOfDaysPast.day ?? 0) + 1)), numberOfDays, dates, dictionary, holdingCat)
         case .month:
             var dates = [Date]()
             var nextDate = iterativeDate
@@ -149,7 +149,7 @@ struct InsightsProvider: IntentTimelineProvider {
             var numberOfDays = 0
 
             for _ in 1 ... range.count {
-                nextDate = calendar.date(byAdding: .day, value: 1, to: iterativeDate)!
+                nextDate = calendar.date(byAdding: .day, value: 1, to: iterativeDate) ?? iterativeDate
 
                 let holding = transactions.filter {
                     $0.wrappedDate >= iterativeDate && $0.wrappedDate < nextDate
@@ -205,7 +205,7 @@ struct InsightsProvider: IntentTimelineProvider {
                 lhs.percent > rhs.percent
             })
 
-            return (totalForMonth, maximum, totalForMonth / Double((numDays.day! + 1)), numberOfDays, dates, dictionary, holdingCat)
+            return (totalForMonth, maximum, totalForMonth / Double(((numDays.day ?? 0) + 1)), numberOfDays, dates, dictionary, holdingCat)
         case .year:
             // trackin dates
             var dates = [Date]()
@@ -219,7 +219,7 @@ struct InsightsProvider: IntentTimelineProvider {
             var numberOfDays = 0
 
             for _ in 1 ... 12 {
-                nextDate = calendar.date(byAdding: .month, value: 1, to: iterativeDate)!
+                nextDate = calendar.date(byAdding: .month, value: 1, to: iterativeDate) ?? iterativeDate
 
                 let holding = transactions.filter {
                     $0.wrappedDate >= iterativeDate && $0.wrappedDate < nextDate
@@ -275,7 +275,7 @@ struct InsightsProvider: IntentTimelineProvider {
                 lhs.percent > rhs.percent
             })
 
-            return (totalForYear, maximum, totalForYear / Double((numDays.month! + 1)), numberOfDays, dates, dictionary, holdingCat)
+            return (totalForYear, maximum, totalForYear / Double(((numDays.month ?? 0) + 1)), numberOfDays, dates, dictionary, holdingCat)
         }
     }
 }
@@ -301,9 +301,9 @@ struct InsightsWidgetEntryView: View {
     let monthNames: [Int: String] = [1: "Jan", 4: "Apr", 7: "Jul", 10: "Oct"]
 
     @AppStorage("firstDayOfMonth", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var firstDayOfMonth: Int = 1
-    @AppStorage("currency", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var currency: String = Locale.current.currencyCode!
+    @AppStorage("currency", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var currency: String = (Locale.current.currencyCode ?? "USD")
     var currencySymbol: String {
-        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency)!
+        return Locale.current.localizedCurrencySymbol(forCurrencyCode: currency) ?? currency
     }
 
     @AppStorage("showCents", store: UserDefaults(suiteName: "group.com.rafaelsoh.dime")) var showCents: Bool = true
